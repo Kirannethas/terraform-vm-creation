@@ -1,0 +1,64 @@
+trigger:
+  - main
+
+stages:
+  - stage: Build
+    displayName: "Terraform Build Stage"
+
+    jobs:
+      - job: Build
+        pool:
+          name: local-agent
+
+        steps:
+          - script: echo "WORKING"
+
+          - task: TerraformTask@5
+            displayName: Terraform-init
+            inputs:
+              provider: 'azurerm'
+              command: 'init'
+              backendServiceArm: 'Azure subscription 1(226ae92d-e1b2-48e6-815b-b9f3f3833cb4)'
+              backendAzureRmResourceGroupName: 'RG'
+              backendAzureRmStorageAccountName: 'statefilemain'
+              backendAzureRmContainerName: 'devcontainer'
+              backendAzureRmKey: 'prod.terraform.tfstate'
+
+          - task: TerraformTask@5
+            displayName: TF validate
+            inputs:
+              provider: 'azurerm'
+              command: 'validate'
+
+          - task: TerraformTask@5
+            displayName: tf format
+            inputs:
+              provider: 'azurerm'
+              command: 'custom'
+              outputTo: 'console'
+              customCommand: 'fmt'
+              environmentServiceNameAzureRM: 'Azure subscription 1(226ae92d-e1b2-48e6-815b-b9f3f3833cb4)'
+
+          - task: TerraformTask@5
+            displayName: tf plan
+            inputs:
+              provider: 'azurerm'
+              command: 'plan'
+              commandOptions: '-out $(Build.SourcesDirectory)/tfplanfile'
+              environmentServiceNameAzureRM: 'Azure subscription 1(226ae92d-e1b2-48e6-815b-b9f3f3833cb4)'
+
+          - task: ArchiveFiles@2
+            displayName: archieve files
+            inputs:
+              rootFolderOrFile: '$(Build.SourcesDirectory)/'
+              includeRootFolder: false
+              archiveType: 'zip'
+              archiveFile: '$(Build.ArtifactStagingDirectory)/$(Build.BuildId).zip'
+              replaceExistingArchive: true
+
+          - task: PublishBuildArtifacts@1
+            displayName: Publish artifacts
+            inputs:
+              PathtoPublish: '$(Build.ArtifactStagingDirectory)'
+              ArtifactName: 'terraform-build'        
+              publishLocation: 'Container'
