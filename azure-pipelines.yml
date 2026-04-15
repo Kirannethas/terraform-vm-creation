@@ -18,6 +18,7 @@ stages:
             inputs:
               provider: 'azurerm'
               command: 'init'
+              commandOptions: '-reconfigure'
               backendServiceArm: 'Azure subscription 1(226ae92d-e1b2-48e6-815b-b9f3f3833cb4)'
               backendAzureRmResourceGroupName: 'RG'
               backendAzureRmStorageAccountName: 'statefilemain'
